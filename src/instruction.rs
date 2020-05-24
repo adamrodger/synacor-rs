@@ -4,6 +4,8 @@ use std::convert::TryInto;
 /// Program instruction
 pub enum Instruction {
     Add(Argument, Argument, Argument),
+    Equal(Argument, Argument, Argument),
+    GreaterThan(Argument, Argument, Argument),
     Halt,
     Jump(Argument),
     JumpNonZero(Argument, Argument),
@@ -23,6 +25,16 @@ impl Instruction {
             1 => Ok(Instruction::Set(
                 memory[pointer + 1].try_into()?,
                 memory[pointer + 2].try_into()?,
+            )),
+            4 => Ok(Instruction::Equal(
+                memory[pointer + 1].try_into()?,
+                memory[pointer + 2].try_into()?,
+                memory[pointer + 3].try_into()?,
+            )),
+            5 => Ok(Instruction::GreaterThan(
+                memory[pointer + 1].try_into()?,
+                memory[pointer + 2].try_into()?,
+                memory[pointer + 3].try_into()?,
             )),
             6 => Ok(Instruction::Jump(memory[pointer + 1].try_into()?)),
             7 => Ok(Instruction::JumpNonZero(
@@ -48,6 +60,8 @@ impl Instruction {
     pub fn size(&self) -> usize {
         match self {
             Instruction::Add(_, _, _) => 4,
+            Instruction::Equal(_, _, _) => 4,
+            Instruction::GreaterThan(_, _, _) => 4,
             Instruction::Halt => 1,
             Instruction::Jump(_) => 2,
             Instruction::JumpNonZero(_, _) => 3,

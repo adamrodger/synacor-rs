@@ -33,12 +33,28 @@ impl VirtualMachine {
                 Instruction::Output(arg) => {
                     print!("{}", self.memory.read(arg) as u8 as char);
                 }
+                Instruction::Add(dest, left, right) => {
+                    let value = (self.memory.read(left) + self.memory.read(right)) % 32768u16;
+                    self.memory.write(dest, value)?;
+                }
                 Instruction::Set(register, arg) => {
                     let value = self.memory.read(arg);
                     self.memory.write(register, value)?;
                 }
-                Instruction::Add(dest, left, right) => {
-                    let value = (self.memory.read(left) + self.memory.read(right)) % 32768u16;
+                Instruction::Equal(dest, left, right) => {
+                    let value = if self.memory.read(left) == self.memory.read(right) {
+                        1
+                    } else {
+                        0
+                    };
+                    self.memory.write(dest, value)?;
+                }
+                Instruction::GreaterThan(dest, left, right) => {
+                    let value = if self.memory.read(left) > self.memory.read(right) {
+                        1
+                    } else {
+                        0
+                    };
                     self.memory.write(dest, value)?;
                 }
                 Instruction::Jump(arg) => {
