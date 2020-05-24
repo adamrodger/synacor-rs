@@ -1,11 +1,11 @@
-use crate::{errors::SynacorError, argument::Argument};
+use crate::{argument::Argument, errors::SynacorError};
 use std::convert::TryInto;
 
 /// Program instruction
 pub enum Instruction {
     Halt,
     Noop,
-    Output(Argument)
+    Output(Argument),
 }
 
 impl Instruction {
@@ -17,7 +17,7 @@ impl Instruction {
             0 => Ok(Instruction::Halt),
             19 => Ok(Instruction::Output(memory[pointer + 1].try_into()?)),
             21 => Ok(Instruction::Noop),
-            _ => Err(SynacorError::UnsupportedOpCode(opcode))
+            _ => Err(SynacorError::UnsupportedOpCode(opcode)),
         }
     }
 }

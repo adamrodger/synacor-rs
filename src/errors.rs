@@ -1,11 +1,11 @@
-use std::{io, error::Error, fmt::Display};
+use std::{error::Error, fmt::Display, io};
 
 /// Custom error type
 #[derive(Debug)]
 pub enum SynacorError {
     InvalidArgument(u16),
     ParseError(std::io::Error),
-    UnsupportedOpCode(u16)
+    UnsupportedOpCode(u16),
 }
 
 impl Display for SynacorError {
@@ -13,7 +13,9 @@ impl Display for SynacorError {
         match *self {
             SynacorError::InvalidArgument(n) => write!(f, "Invalid pointer address {}", n),
             SynacorError::ParseError(ref e) => e.fmt(f),
-            SynacorError::UnsupportedOpCode(n) => write!(f, "Unsupported opcode encountered: {}", n),
+            SynacorError::UnsupportedOpCode(n) => {
+                write!(f, "Unsupported opcode encountered: {}", n)
+            }
         }
     }
 }
