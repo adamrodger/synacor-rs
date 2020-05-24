@@ -36,45 +36,40 @@ impl VirtualMachine {
     /// execute the program until it ends
     fn execute(&mut self) -> Result<(), SynacorError> {
         loop {
-            let opcode: OpCode = self.memory[self.pointer].try_into()?;
+            let instruction = Instruction::from_state(self.pointer, &self.memory)?;
 
-            match opcode {
-                OpCode::Output => {
-                    let argument: Argument = self.memory[self.pointer + 1].try_into()?;
-
-                    let c: char = match argument {
-                        Argument::Literal(n) => n as u8 as char,
-                        Argument::Register(n) => self.memory[n as usize] as u8 as char
-                    };
-
-                    print!("{}", c);
+            match instruction {
+                Instruction::Output(arg) => {
+                    print!("{}", arg.read(&self.memory) as u8 as char);
                     self.pointer += 2;
                 },
-                OpCode::Noop => {
+                Instruction::Noop => {
                     self.pointer += 1;
                 },
-                OpCode::Halt => return Ok(())
+                Instruction::Halt => return Ok(())
             }
         }
     }
 }
 
-#[derive(Debug)]
-enum OpCode {
+/// Program instruction
+enum Instruction {
     Halt,
     Noop,
-    Output,
+    Output(Argument)
 }
 
-impl TryFrom<u16> for OpCode {
-    type Error = SynacorError;
+impl Instruction {
+    
+    /// load an instruction from memory starting at the current pointer
+    fn from_state(pointer: usize, memory: &[u16]) -> Result<Instruction, SynacorError> {
+        let opcode = memory[pointer];
 
-    fn try_from(value: u16) -> Result<Self, Self::Error> {
-        match value {
-            0 => Ok(OpCode::Halt),
-            19 => Ok(OpCode::Output),
-            21 => Ok(OpCode::Noop),
-            _ => Err(SynacorError::UnsupportedOpCode(value))
+        match opcode {
+            0 => Ok(Instruction::Halt),
+            19 => Ok(Instruction::Output(memory[pointer + 1].try_into()?)),
+            21 => Ok(Instruction::Noop),
+            _ => Err(SynacorError::UnsupportedOpCode(opcode))
         }
     }
 }
@@ -84,6 +79,15 @@ impl TryFrom<u16> for OpCode {
 enum Argument {
     Literal(u16),
     Register(usize)
+}
+
+impl Argument {
+    fn read(&self, memory: &[u16]) -> u16 {
+        match *self {
+            Argument::Literal(n) => n,
+            Argument::Register(n) => memory[n]
+        }
+    }
 }
 
 impl TryFrom<u16> for Argument {
