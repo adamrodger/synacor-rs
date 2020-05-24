@@ -12,6 +12,8 @@ pub enum Instruction {
     JumpZero(Argument, Argument),
     Noop,
     Output(Argument),
+    Push(Argument),
+    Pop(Argument),
     Set(Argument, Argument),
 }
 
@@ -26,6 +28,8 @@ impl Instruction {
                 memory[pointer + 1].try_into()?,
                 memory[pointer + 2].try_into()?,
             )),
+            2 => Ok(Instruction::Push(memory[pointer + 1].try_into()?)),
+            3 => Ok(Instruction::Pop(memory[pointer + 1].try_into()?)),
             4 => Ok(Instruction::Equal(
                 memory[pointer + 1].try_into()?,
                 memory[pointer + 2].try_into()?,
@@ -68,6 +72,8 @@ impl Instruction {
             Instruction::JumpZero(_, _) => 3,
             Instruction::Noop => 1,
             Instruction::Output(_) => 2,
+            Instruction::Push(_) => 2,
+            Instruction::Pop(_) => 2,
             Instruction::Set(_, _) => 3,
         }
     }

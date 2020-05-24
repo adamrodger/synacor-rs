@@ -3,6 +3,7 @@ use std::{error::Error, fmt::Display, io};
 /// Custom error type
 #[derive(Debug)]
 pub enum SynacorError {
+    EmptyStack,
     InvalidArgument(u16),
     ParseError(std::io::Error),
     ReadOnly(u16),
@@ -12,6 +13,7 @@ pub enum SynacorError {
 impl Display for SynacorError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match *self {
+            SynacorError::EmptyStack => write!(f, "Attempt to read from empty stack"),
             SynacorError::InvalidArgument(n) => write!(f, "Invalid pointer address {}", n),
             SynacorError::ParseError(ref e) => e.fmt(f),
             SynacorError::ReadOnly(n) => write!(
@@ -29,6 +31,7 @@ impl Display for SynacorError {
 impl Error for SynacorError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match *self {
+            SynacorError::EmptyStack => None,
             SynacorError::InvalidArgument(_) => None,
             SynacorError::ParseError(ref e) => Some(e),
             SynacorError::ReadOnly(_) => None,

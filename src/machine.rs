@@ -5,6 +5,7 @@ use std::path::Path;
 pub struct VirtualMachine {
     memory: Vec<u16>,
     pointer: usize,
+    stack: Vec<u16>,
 }
 
 impl VirtualMachine {
@@ -19,7 +20,7 @@ impl VirtualMachine {
 
         memory.resize(std::u16::MAX as usize, 0);
 
-        Ok(VirtualMachine { memory, pointer: 0 })
+        Ok(VirtualMachine { memory, pointer: 0, stack: Vec::new() })
     }
 
     /// execute the program until it ends
@@ -72,6 +73,14 @@ impl VirtualMachine {
                         self.pointer = self.memory.read(dest) as usize;
                         continue;
                     }
+                }
+                Instruction::Push(arg) => {
+                    let value = self.memory.read(arg);
+                    self.stack.push(value);
+                }
+                Instruction::Pop(arg) => {
+                    let value = self.stack.pop().ok_or(SynacorError::EmptyStack)?;
+                    self.memory.write(arg, value)?;
                 }
             }
 
