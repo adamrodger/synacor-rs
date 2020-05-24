@@ -1,4 +1,4 @@
-use crate::{errors::SynacorError, argument::Argument};
+use crate::{argument::Argument, errors::SynacorError};
 
 pub type Memory = Vec<u16>;
 

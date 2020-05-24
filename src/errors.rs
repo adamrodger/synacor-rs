@@ -14,7 +14,11 @@ impl Display for SynacorError {
         match *self {
             SynacorError::InvalidArgument(n) => write!(f, "Invalid pointer address {}", n),
             SynacorError::ParseError(ref e) => e.fmt(f),
-            SynacorError::ReadOnly(n) => write!(f, "Attempted to write to read-only memory at position {}", n),
+            SynacorError::ReadOnly(n) => write!(
+                f,
+                "Attempted to write to read-only memory at position {}",
+                n
+            ),
             SynacorError::UnsupportedOpCode(n) => {
                 write!(f, "Unsupported opcode encountered: {}", n)
             }

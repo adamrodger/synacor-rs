@@ -37,6 +37,10 @@ impl VirtualMachine {
                     let value = self.memory.read(arg);
                     self.memory.write(register, value)?;
                 }
+                Instruction::Add(dest, left, right) => {
+                    let value = (self.memory.read(left) + self.memory.read(right)) % 32768u16;
+                    self.memory.write(dest, value)?;
+                }
                 Instruction::Jump(arg) => {
                     self.pointer = self.memory.read(arg) as usize;
                     continue;
