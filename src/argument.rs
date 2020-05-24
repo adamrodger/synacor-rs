@@ -8,15 +8,6 @@ pub enum Argument {
     Register(usize),
 }
 
-impl Argument {
-    pub fn read(&self, memory: &[u16]) -> u16 {
-        match *self {
-            Argument::Literal(n) => n,
-            Argument::Register(n) => memory[n],
-        }
-    }
-}
-
 impl TryFrom<u16> for Argument {
     type Error = SynacorError;
 

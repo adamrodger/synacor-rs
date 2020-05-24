@@ -5,6 +5,7 @@ mod argument;
 mod errors;
 mod instruction;
 mod machine;
+mod memory;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let path = Path::new(env!("CARGO_MANIFEST_DIR"))
