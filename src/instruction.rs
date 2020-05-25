@@ -20,8 +20,10 @@ pub enum Instruction {
     Output(Argument),
     Push(Argument),
     Pop(Argument),
+    Read(Argument, Argument),
     Return,
     Set(Argument, Argument),
+    Write(Argument, Argument),
 }
 
 impl Instruction {
@@ -85,6 +87,14 @@ impl Instruction {
                 memory[pointer + 1].try_into()?,
                 memory[pointer + 2].try_into()?,
             )),
+            15 => Ok(Instruction::Read(
+                memory[pointer + 1].try_into()?,
+                memory[pointer + 2].try_into()?,
+            )),
+            16 => Ok(Instruction::Write(
+                memory[pointer + 1].try_into()?,
+                memory[pointer + 2].try_into()?,
+            )),
             17 => Ok(Instruction::Call(memory[pointer + 1].try_into()?)),
             18 => Ok(Instruction::Return),
             19 => Ok(Instruction::Output(memory[pointer + 1].try_into()?)),
@@ -113,8 +123,10 @@ impl Instruction {
             Instruction::Output(_) => 2,
             Instruction::Push(_) => 2,
             Instruction::Pop(_) => 2,
+            Instruction::Read(_, _) => 3,
             Instruction::Return => 1,
             Instruction::Set(_, _) => 3,
+            Instruction::Write(_, _) => 3,
         }
     }
 }

@@ -6,8 +6,8 @@ pub enum SynacorError {
     EmptyStack,
     InvalidArgument(u16),
     ParseError(std::io::Error),
-    ReadOnly(u16),
     UnsupportedOpCode(u16),
+    WriteToLiteral(u16),
 }
 
 impl Display for SynacorError {
@@ -16,14 +16,10 @@ impl Display for SynacorError {
             SynacorError::EmptyStack => write!(f, "Attempt to read from empty stack"),
             SynacorError::InvalidArgument(n) => write!(f, "Invalid pointer address {}", n),
             SynacorError::ParseError(ref e) => e.fmt(f),
-            SynacorError::ReadOnly(n) => write!(
-                f,
-                "Attempted to write to read-only memory at position {}",
-                n
-            ),
             SynacorError::UnsupportedOpCode(n) => {
                 write!(f, "Unsupported opcode encountered: {}", n)
             }
+            SynacorError::WriteToLiteral(n) => write!(f, "Attempted to write to literal {}", n),
         }
     }
 }
@@ -34,8 +30,8 @@ impl Error for SynacorError {
             SynacorError::EmptyStack => None,
             SynacorError::InvalidArgument(_) => None,
             SynacorError::ParseError(ref e) => Some(e),
-            SynacorError::ReadOnly(_) => None,
             SynacorError::UnsupportedOpCode(_) => None,
+            SynacorError::WriteToLiteral(_) => None,
         }
     }
 }

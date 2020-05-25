@@ -6,6 +6,7 @@ use std::convert::TryFrom;
 pub enum Argument {
     Literal(u16),
     Register(usize),
+    Reference(u16),
 }
 
 impl TryFrom<u16> for Argument {

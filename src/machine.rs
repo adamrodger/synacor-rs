@@ -1,5 +1,10 @@
-use crate::{errors::SynacorError, instruction::Instruction, memory::MemoryExt};
+use crate::{
+    argument::Argument, errors::SynacorError, instruction::Instruction, memory::MemoryExt,
+};
 use std::path::Path;
+
+const MAX_MEMORY: usize = 1 << 15;
+const REGISTERS: usize = 8;
 
 /// Synacor Virtual Machine
 pub struct VirtualMachine {
@@ -18,9 +23,13 @@ impl VirtualMachine {
             .map(|chunk| ((chunk[1] as u16) << 8) + (chunk[0] as u16))
             .collect();
 
-        memory.resize(std::u16::MAX as usize, 0);
+        memory.resize(MAX_MEMORY + REGISTERS, 0);
 
-        Ok(VirtualMachine { memory, pointer: 0, stack: Vec::new() })
+        Ok(VirtualMachine {
+            memory,
+            pointer: 0,
+            stack: Vec::new(),
+        })
     }
 
     /// execute the program until it ends
@@ -39,7 +48,8 @@ impl VirtualMachine {
                     self.memory.write(dest, value)?;
                 }
                 Instruction::Multiply(dest, left, right) => {
-                    let value = ((self.memory.read(left) as u32 * self.memory.read(right) as u32) % 32768u32) as u16;
+                    let value = ((self.memory.read(left) as u32 * self.memory.read(right) as u32)
+                        % 32768u32) as u16;
                     self.memory.write(dest, value)?;
                 }
                 Instruction::Mod(dest, left, right) => {
@@ -113,10 +123,19 @@ impl VirtualMachine {
                     if let Some(value) = self.stack.pop() {
                         self.pointer = value as usize;
                         continue;
+                    } else {
+                        return Ok(());
                     }
-                    else {
-                        return Ok(())
-                    }
+                }
+                Instruction::Read(dest, src) => {
+                    let src_ref = Argument::Reference(self.memory.read(src));
+                    let value = self.memory.read(&src_ref);
+                    self.memory.write(dest, value)?;
+                }
+                Instruction::Write(dest, src) => {
+                    let dest_ref = Argument::Reference(self.memory.read(dest)); // de-ref
+                    let value = self.memory.read(src);
+                    self.memory.write(&dest_ref, value)?;
                 }
             }
 
