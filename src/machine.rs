@@ -94,6 +94,22 @@ impl VirtualMachine {
                     let value = !self.memory.read(arg) & 0x7FFF; // 15-bit bitwise inverse
                     self.memory.write(dest, value)?;
                 }
+                Instruction::Call(arg) => {
+                    self.stack.push((self.pointer + instruction.size()) as u16);
+
+                    let value = self.memory.read(arg);
+                    self.pointer = value as usize;
+                    continue;
+                }
+                Instruction::Return => {
+                    if let Some(value) = self.stack.pop() {
+                        self.pointer = value as usize;
+                        continue;
+                    }
+                    else {
+                        return Ok(())
+                    }
+                }
             }
 
             self.pointer += instruction.size();

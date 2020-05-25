@@ -5,6 +5,7 @@ use std::convert::TryInto;
 pub enum Instruction {
     Add(Argument, Argument, Argument),
     And(Argument, Argument, Argument),
+    Call(Argument),
     Equal(Argument, Argument, Argument),
     GreaterThan(Argument, Argument, Argument),
     Halt,
@@ -17,6 +18,7 @@ pub enum Instruction {
     Output(Argument),
     Push(Argument),
     Pop(Argument),
+    Return,
     Set(Argument, Argument),
 }
 
@@ -71,6 +73,8 @@ impl Instruction {
                 memory[pointer + 1].try_into()?,
                 memory[pointer + 2].try_into()?,
             )),
+            17 => Ok(Instruction::Call(memory[pointer + 1].try_into()?)),
+            18 => Ok(Instruction::Return),
             19 => Ok(Instruction::Output(memory[pointer + 1].try_into()?)),
             21 => Ok(Instruction::Noop),
             _ => Err(SynacorError::UnsupportedOpCode(opcode)),
@@ -82,6 +86,7 @@ impl Instruction {
         match self {
             Instruction::Add(_, _, _) => 4,
             Instruction::And(_, _, _) => 4,
+            Instruction::Call(_) => 2,
             Instruction::Equal(_, _, _) => 4,
             Instruction::GreaterThan(_, _, _) => 4,
             Instruction::Halt => 1,
@@ -94,6 +99,7 @@ impl Instruction {
             Instruction::Output(_) => 2,
             Instruction::Push(_) => 2,
             Instruction::Pop(_) => 2,
+            Instruction::Return => 1,
             Instruction::Set(_, _) => 3,
         }
     }
