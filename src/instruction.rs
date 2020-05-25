@@ -9,6 +9,7 @@ pub enum Instruction {
     Equal(Argument, Argument, Argument),
     GreaterThan(Argument, Argument, Argument),
     Halt,
+    Input(Argument),
     Jump(Argument),
     JumpNonZero(Argument, Argument),
     JumpZero(Argument, Argument),
@@ -98,6 +99,7 @@ impl Instruction {
             17 => Ok(Instruction::Call(memory[pointer + 1].try_into()?)),
             18 => Ok(Instruction::Return),
             19 => Ok(Instruction::Output(memory[pointer + 1].try_into()?)),
+            20 => Ok(Instruction::Input(memory[pointer + 1].try_into()?)),
             21 => Ok(Instruction::Noop),
             _ => Err(SynacorError::UnsupportedOpCode(opcode)),
         }
@@ -112,6 +114,7 @@ impl Instruction {
             Instruction::Equal(_, _, _) => 4,
             Instruction::GreaterThan(_, _, _) => 4,
             Instruction::Halt => 1,
+            Instruction::Input(_) => 2,
             Instruction::Jump(_) => 2,
             Instruction::JumpNonZero(_, _) => 3,
             Instruction::JumpZero(_, _) => 3,

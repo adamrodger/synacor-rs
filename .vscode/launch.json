@@ -1,0 +1,14 @@
+{
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug",
+            "program": "${workspaceRoot}/target/debug/${workspaceRootFolderName}.exe",
+            "args": [],
+            "cwd": "${workspaceRoot}",
+            "sourceLanguages": ["rust"],
+            "terminal": "integrated"
+        }
+    ]
+}

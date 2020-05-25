@@ -1,7 +1,8 @@
 use crate::{
     argument::Argument, errors::SynacorError, instruction::Instruction, memory::MemoryExt,
 };
-use std::path::Path;
+use io::Write;
+use std::{collections::VecDeque, io, path::Path};
 
 const MAX_MEMORY: usize = 1 << 15;
 const REGISTERS: usize = 8;
@@ -11,6 +12,7 @@ pub struct VirtualMachine {
     memory: Vec<u16>,
     pointer: usize,
     stack: Vec<u16>,
+    stdin: VecDeque<char>,
 }
 
 impl VirtualMachine {
@@ -28,7 +30,8 @@ impl VirtualMachine {
         Ok(VirtualMachine {
             memory,
             pointer: 0,
-            stack: Vec::new(),
+            stack: Vec::with_capacity(100),
+            stdin: VecDeque::with_capacity(100),
         })
     }
 
@@ -40,6 +43,22 @@ impl VirtualMachine {
             match instruction {
                 Instruction::Noop => {}
                 Instruction::Halt => return Ok(()),
+                Instruction::Input(dest) => {
+                    if self.stdin.is_empty() {
+                        // make sure there's no unprinted output
+                        io::stdout().lock().flush()?;
+
+                        let mut line = String::new();
+                        io::stdin().read_line(&mut line)?;
+
+                        for c in line.chars().filter(|f| *f != '\r') {
+                            self.stdin.push_back(c);
+                        }
+                    }
+
+                    let value = self.stdin.pop_front().ok_or(SynacorError::NoInput)?;
+                    self.memory.write(dest, value as u16)?;
+                }
                 Instruction::Output(arg) => {
                     print!("{}", self.memory.read(arg) as u8 as char);
                 }
