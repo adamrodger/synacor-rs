@@ -1,21 +1,23 @@
 use crate::{
     argument::Argument, errors::SynacorError, instruction::Instruction, memory::MemoryExt,
 };
-use io::Write;
-use std::{collections::VecDeque, io, path::Path};
+use std::{collections::VecDeque, path::Path};
 
 const MAX_MEMORY: usize = 1 << 15;
 const REGISTERS: usize = 8;
 
 /// Synacor Virtual Machine
-pub struct VirtualMachine {
+pub struct VirtualMachine<'a> {
     memory: Vec<u16>,
     pointer: usize,
     stack: Vec<u16>,
     stdin: VecDeque<char>,
+    stdout: VecDeque<char>,
+    output_callback: Option<Box<dyn Fn(String) + 'a>>,
+    input_callback: Option<Box<dyn Fn() -> String + 'a>>,
 }
 
-impl VirtualMachine {
+impl<'a> VirtualMachine<'a> {
     /// Create a new virtual machine with memory parsed from the given file path
     pub fn from_file<P: AsRef<Path>>(path: P) -> Result<Self, SynacorError> {
         let buffer: Vec<u8> = std::fs::read(path)?;
@@ -32,7 +34,18 @@ impl VirtualMachine {
             pointer: 0,
             stack: Vec::with_capacity(100),
             stdin: VecDeque::with_capacity(100),
+            stdout: VecDeque::with_capacity(100),
+            output_callback: None,
+            input_callback: None,
         })
+    }
+
+    pub fn on_output(&mut self, callback: impl Fn(String) + 'a) {
+        self.output_callback = Some(Box::new(callback));
+    }
+
+    pub fn on_input_required(&mut self, callback: impl Fn() -> String + 'a) {
+        self.input_callback = Some(Box::new(callback));
     }
 
     /// execute the program until it ends
@@ -45,11 +58,12 @@ impl VirtualMachine {
                 Instruction::Halt => return Ok(()),
                 Instruction::Input(dest) => {
                     if self.stdin.is_empty() {
-                        // make sure there's no unprinted output
-                        io::stdout().lock().flush()?;
+                        let callback = match &self.input_callback {
+                            Some(f) => Ok(f),
+                            None => Err(SynacorError::NoInput),
+                        }?;
 
-                        let mut line = String::new();
-                        io::stdin().read_line(&mut line)?;
+                        let line = (*callback)();
 
                         for c in line.chars().filter(|f| *f != '\r') {
                             self.stdin.push_back(c);
@@ -60,7 +74,17 @@ impl VirtualMachine {
                     self.memory.write(dest, value as u16)?;
                 }
                 Instruction::Output(arg) => {
-                    print!("{}", self.memory.read(arg) as u8 as char);
+                    let output = self.memory.read(arg) as u8 as char;
+
+                    if output == '\n' {
+                        let line = self.stdout.drain(..).collect::<String>();
+
+                        if let Some(callback) = &self.output_callback {
+                            (*callback)(line);
+                        };
+                    } else {
+                        self.stdout.push_back(output);
+                    }
                 }
                 Instruction::Add(dest, left, right) => {
                     let value = (self.memory.read(left) + self.memory.read(right)) % 32768u16;
