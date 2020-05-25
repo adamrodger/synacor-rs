@@ -38,6 +38,14 @@ impl VirtualMachine {
                     let value = (self.memory.read(left) + self.memory.read(right)) % 32768u16;
                     self.memory.write(dest, value)?;
                 }
+                Instruction::Multiply(dest, left, right) => {
+                    let value = ((self.memory.read(left) as u32 * self.memory.read(right) as u32) % 32768u32) as u16;
+                    self.memory.write(dest, value)?;
+                }
+                Instruction::Mod(dest, left, right) => {
+                    let value = self.memory.read(left) % self.memory.read(right);
+                    self.memory.write(dest, value)?;
+                }
                 Instruction::Set(register, arg) => {
                     let value = self.memory.read(arg);
                     self.memory.write(register, value)?;
