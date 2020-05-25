@@ -4,6 +4,7 @@ use std::convert::TryInto;
 /// Program instruction
 pub enum Instruction {
     Add(Argument, Argument, Argument),
+    And(Argument, Argument, Argument),
     Equal(Argument, Argument, Argument),
     GreaterThan(Argument, Argument, Argument),
     Halt,
@@ -11,6 +12,8 @@ pub enum Instruction {
     JumpNonZero(Argument, Argument),
     JumpZero(Argument, Argument),
     Noop,
+    Not(Argument, Argument),
+    Or(Argument, Argument, Argument),
     Output(Argument),
     Push(Argument),
     Pop(Argument),
@@ -54,6 +57,20 @@ impl Instruction {
                 memory[pointer + 2].try_into()?,
                 memory[pointer + 3].try_into()?,
             )),
+            12 => Ok(Instruction::And(
+                memory[pointer + 1].try_into()?,
+                memory[pointer + 2].try_into()?,
+                memory[pointer + 3].try_into()?,
+            )),
+            13 => Ok(Instruction::Or(
+                memory[pointer + 1].try_into()?,
+                memory[pointer + 2].try_into()?,
+                memory[pointer + 3].try_into()?,
+            )),
+            14 => Ok(Instruction::Not(
+                memory[pointer + 1].try_into()?,
+                memory[pointer + 2].try_into()?,
+            )),
             19 => Ok(Instruction::Output(memory[pointer + 1].try_into()?)),
             21 => Ok(Instruction::Noop),
             _ => Err(SynacorError::UnsupportedOpCode(opcode)),
@@ -64,6 +81,7 @@ impl Instruction {
     pub fn size(&self) -> usize {
         match self {
             Instruction::Add(_, _, _) => 4,
+            Instruction::And(_, _, _) => 4,
             Instruction::Equal(_, _, _) => 4,
             Instruction::GreaterThan(_, _, _) => 4,
             Instruction::Halt => 1,
@@ -71,6 +89,8 @@ impl Instruction {
             Instruction::JumpNonZero(_, _) => 3,
             Instruction::JumpZero(_, _) => 3,
             Instruction::Noop => 1,
+            Instruction::Not(_, _) => 3,
+            Instruction::Or(_, _, _) => 4,
             Instruction::Output(_) => 2,
             Instruction::Push(_) => 2,
             Instruction::Pop(_) => 2,

@@ -82,6 +82,18 @@ impl VirtualMachine {
                     let value = self.stack.pop().ok_or(SynacorError::EmptyStack)?;
                     self.memory.write(arg, value)?;
                 }
+                Instruction::And(dest, left, right) => {
+                    let value = self.memory.read(left) & self.memory.read(right);
+                    self.memory.write(dest, value)?;
+                }
+                Instruction::Or(dest, left, right) => {
+                    let value = self.memory.read(left) | self.memory.read(right);
+                    self.memory.write(dest, value)?;
+                }
+                Instruction::Not(dest, arg) => {
+                    let value = !self.memory.read(arg) & 0x7FFF; // 15-bit bitwise inverse
+                    self.memory.write(dest, value)?;
+                }
             }
 
             self.pointer += instruction.size();
