@@ -1,7 +1,7 @@
 extern crate synacor_vm;
 
-use synacor_vm::machine::VirtualMachine;
-use std::{io::Write, path::Path};
+use std::path::Path;
+use synacor_vm::machine::{VirtualMachine, YieldReason};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let path = Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -10,30 +10,38 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .join("challenge.bin");
     let mut vm = VirtualMachine::from_file(path)?;
 
-    // connect to input/output events
-    vm.on_output(write_stdout_line);
-    vm.on_input_required(read_stdin_line);
+    loop {
+        let reason = vm.execute()?;
+        let output = vm.flush_stdout();
+        print!("{}", output);
 
-    vm.execute()?;
+        match reason {
+            YieldReason::Halted => return Ok(()),
+            YieldReason::InputRequired => {
+                let mut line = String::new();
+                std::io::stdin()
+                    .read_line(&mut line)
+                    .expect("Failed to read from stdin");
 
-    Ok(())
+                line = line.replace("\r", "");
+                vm.write_stdin(line);
+            }
+        }
+    }
 }
 
-fn read_stdin_line() -> String {
-    // make sure there's no unprinted output
-    std::io::stdout()
-        .lock()
-        .flush()
-        .expect("Failed to flush stdout");
-
-    let mut line = String::new();
-    std::io::stdin()
-        .read_line(&mut line)
-        .expect("Failed to read from stdin");
-
-    line
+/// a location within the maze
+struct Location<'a> {
+    id: String,
+    items: Vec<Item<'a>>,
+    exits: Vec<&'a Location<'a>>,
 }
 
-fn write_stdout_line(line: String) {
-    println!("{}", &line);
+// an item
+type Item<'a> = &'a str;
+
+// player
+struct Player<'a> {
+    location: &'a Location<'a>,
+    inventory: Vec<&'a Item<'a>>,
 }

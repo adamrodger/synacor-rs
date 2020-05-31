@@ -7,17 +7,15 @@ const MAX_MEMORY: usize = 1 << 15;
 const REGISTERS: usize = 8;
 
 /// Synacor Virtual Machine
-pub struct VirtualMachine<'a> {
+pub struct VirtualMachine {
     memory: Vec<u16>,
     pointer: usize,
     stack: Vec<u16>,
     stdin: VecDeque<char>,
     stdout: VecDeque<char>,
-    output_callback: Option<Box<dyn Fn(String) + 'a>>,
-    input_callback: Option<Box<dyn Fn() -> String + 'a>>,
 }
 
-impl<'a> VirtualMachine<'a> {
+impl VirtualMachine {
     /// Create a new virtual machine with memory parsed from the given file path
     pub fn from_file<P: AsRef<Path>>(path: P) -> Result<Self, SynacorError> {
         let buffer: Vec<u8> = std::fs::read(path)?;
@@ -35,39 +33,30 @@ impl<'a> VirtualMachine<'a> {
             stack: Vec::with_capacity(100),
             stdin: VecDeque::with_capacity(100),
             stdout: VecDeque::with_capacity(100),
-            output_callback: None,
-            input_callback: None,
         })
     }
 
-    pub fn on_output(&mut self, callback: impl Fn(String) + 'a) {
-        self.output_callback = Some(Box::new(callback));
+    /// Write a line to stdin of the vm
+    pub fn write_stdin(&mut self, line: String) {
+        line.chars().for_each(|c| self.stdin.push_back(c));
     }
 
-    pub fn on_input_required(&mut self, callback: impl Fn() -> String + 'a) {
-        self.input_callback = Some(Box::new(callback));
+    /// Flush stdout and take ownership of the contents
+    pub fn flush_stdout(&mut self) -> String {
+        self.stdout.drain(..).collect::<String>()
     }
 
-    /// execute the program until it ends
-    pub fn execute(&mut self) -> Result<(), SynacorError> {
+    /// execute the program until it yields
+    pub fn execute(&mut self) -> Result<YieldReason, SynacorError> {
         loop {
             let instruction = &Instruction::from_state(self.pointer, &self.memory)?;
 
             match instruction {
                 Instruction::Noop => {}
-                Instruction::Halt => return Ok(()),
+                Instruction::Halt => return Ok(YieldReason::Halted),
                 Instruction::Input(dest) => {
                     if self.stdin.is_empty() {
-                        let callback = match &self.input_callback {
-                            Some(f) => Ok(f),
-                            None => Err(SynacorError::NoInput),
-                        }?;
-
-                        let line = (*callback)();
-
-                        for c in line.chars().filter(|f| *f != '\r') {
-                            self.stdin.push_back(c);
-                        }
+                        return Ok(YieldReason::InputRequired);
                     }
 
                     let value = self.stdin.pop_front().ok_or(SynacorError::NoInput)?;
@@ -75,16 +64,7 @@ impl<'a> VirtualMachine<'a> {
                 }
                 Instruction::Output(arg) => {
                     let output = self.memory.read(arg) as u8 as char;
-
-                    if output == '\n' {
-                        let line = self.stdout.drain(..).collect::<String>();
-
-                        if let Some(callback) = &self.output_callback {
-                            (*callback)(line);
-                        };
-                    } else {
-                        self.stdout.push_back(output);
-                    }
+                    self.stdout.push_back(output);
                 }
                 Instruction::Add(dest, left, right) => {
                     let value = (self.memory.read(left) + self.memory.read(right)) % 32768u16;
@@ -167,7 +147,7 @@ impl<'a> VirtualMachine<'a> {
                         self.pointer = value as usize;
                         continue;
                     } else {
-                        return Ok(());
+                        return Ok(YieldReason::Halted);
                     }
                 }
                 Instruction::Read(dest, src) => {
@@ -185,4 +165,13 @@ impl<'a> VirtualMachine<'a> {
             self.pointer += instruction.size();
         }
     }
+}
+
+/// Yield reason
+pub enum YieldReason {
+    /// The program executed successfully
+    Halted,
+
+    /// The program requires input and none is available
+    InputRequired,
 }
