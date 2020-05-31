@@ -1,9 +1,6 @@
-[package]
-name = "synacor-rs"
-version = "0.1.0"
-authors = ["Adam Rodger <adam.rodger@gmail.com>"]
-edition = "2018"
+[workspace]
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
+members = [
+    "synacor-game",
+    "synacor-vm",
+]
