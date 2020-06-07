@@ -29,19 +29,3 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 }
-
-/// a location within the maze
-struct Location<'a> {
-    id: String,
-    items: Vec<Item<'a>>,
-    exits: Vec<&'a Location<'a>>,
-}
-
-// an item
-type Item<'a> = &'a str;
-
-// player
-struct Player<'a> {
-    location: &'a Location<'a>,
-    inventory: Vec<&'a Item<'a>>,
-}
